@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { request, Request, Response } from "express";
+import { QueryConfig } from "pg";
 import format from "pg-format";
 import { client } from "./database";
 import {
@@ -15,10 +16,10 @@ export const postNewDeveloper = async (
   const requiredKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
   try {
     const developerData: IDeveloperData = request.body;
-    const queryString = format(
+    const queryString: string = format(
       `
     INSERT INTO
-        developers(%I)
+        developers(%I) 
     VALUES 
         (%L)
     RETURNING *;
@@ -40,19 +41,246 @@ export const postNewDeveloper = async (
   }
 };
 
+export const postNewDeveloperInfo = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const requestId: number = Number(request.params.id);
+  const developerData: IDeveloperData = request.body;
+  let queryString: string = format(
+    `
+    INSERT INTO
+        developer_infos(%I)
+    VALUES
+        (%L)
+    RETURNING *;
+    `,
+    Object.keys(developerData),
+    Object.values(developerData)
+  );
+
+  const queryResult = await client.query(queryString);
+  queryString = `
+    UPDATE
+      developers
+    SET
+      "developerInfoId" = $1
+    WHERE
+      id = $2
+    RETURNING *;
+    `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [queryResult.rows[0].id, requestId],
+  };
+
+  await client.query(queryConfig);
+
+  return response.status(201).json(queryResult.rows[0]);
+};
+
 // GET -------------------------------------------------------------------
 export const getAllDevelopers = async (
   request: Request,
   response: Response
 ): Promise<Response> => {
-  const queryString = `
-        SELECT
-            *
-        FROM
-            developers
-    `;
+  const queryString: string = `
+    SELECT
+      developers.*,
+      dinf."developerSince",
+      dinf."preferredOS"
+    FROM 
+      developers
+    FULL JOIN
+      developer_infos dinf ON developers."developerInfoId" = dinf.id
+  `;
 
   const queryResult = await client.query(queryString);
 
   return response.status(200).json(queryResult.rows);
+};
+
+export const getASingleDeveloper = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const requestId: number = Number(request.params.id);
+
+  const queryString: string = `
+    SELECT
+      developers.*,
+      dinf."developerSince",
+      dinf."preferredOS"
+    FROM
+      developers
+    LEFT JOIN
+      developer_infos dinf ON developers."developerInfoId" = dinf.id
+    WHERE
+     developers.id = $1
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [requestId],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  return response.status(200).json(queryResult.rows[0]);
+};
+
+// PATCH -----------------------------------------------------------------
+
+export const patchDeveloper = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const requestId: number = Number(request.params.id);
+  const developerKeys: Array<string> = Object.keys(request.body);
+  const developerValues: Array<string> = Object.values(request.body);
+  const requiredKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
+
+  if (developerKeys.length > requiredKeys.length) {
+    return response
+      .status(409)
+      .json({ message: `Required keys are: ${requiredKeys}` });
+  }
+
+  const queryString: string = format(
+    `
+    UPDATE
+      developers
+    SET
+      (%I) = row (%L) 
+    WHERE
+      id = $1
+    RETURNING *;
+  `,
+    developerKeys,
+    developerValues
+  );
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [requestId],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  return response.status(200).json(queryResult.rows[0]);
+};
+
+export const patchDeveloperInfo = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const requestId: number = Number(request.params.id);
+  const developerKeys: Array<string> = Object.keys(request.body);
+  const developerValues: Array<string> = Object.values(request.body);
+  const requiredKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
+
+  const includesOS: boolean = developerValues.includes(
+    "Linux" || "Windows" || "MacOS"
+  );
+
+  if (!includesOS) {
+    return response.status(400).json({
+      message: "PreferredOS value needs to be Windows or Linux or MacOS",
+    });
+  }
+
+  if (developerKeys.length > requiredKeys.length) {
+    return response
+      .status(409)
+      .json({ message: `Required keys are: ${requiredKeys}` });
+  }
+
+  const getQueryString: string = `
+    SELECT
+      *
+    FROM
+      developers
+    WHERE
+      id = $1
+  `;
+
+  const getQueryConfig: QueryConfig = {
+    text: getQueryString,
+    values: [requestId],
+  };
+
+  const getQueryResult = await client.query(getQueryConfig);
+
+  const updateQueryString: string = format(
+    `
+    UPDATE
+      developer_infos
+    SET
+      (%I) = row (%L)
+    WHERE
+      id = $1
+    RETURNING *;
+  `,
+    developerKeys,
+    developerValues
+  );
+
+  const updateQueryConfig: QueryConfig = {
+    text: updateQueryString,
+    values: [getQueryResult.rows[0].developerInfoId],
+  };
+
+  const updateQueryResult = await client.query(updateQueryConfig);
+
+  return response.status(200).json(updateQueryResult.rows[0]);
+};
+// DELETE ----------------------------------------------------------------
+
+export const deleteDeveloper = async (request: Request, response: Response) => {
+  const requestId: number = Number(request.params.id);
+
+  const queryString: string = `
+    DELETE FROM
+      developers
+    WHERE
+      id = $1
+  `;
+
+  const getQueryString: string = `
+    SELECT
+      *
+    FROM
+      developers
+    WHERE
+      id = $1
+  `;
+
+  const getQueryConfig: QueryConfig = {
+    text: getQueryString,
+    values: [requestId],
+  };
+  const getQueryResult = await client.query(getQueryConfig);
+
+  const queryStringInfo: string = `
+    DELETE FROM
+      developer_infos
+    WHERE
+      id = $1
+  `;
+
+  const queryConfigInfo: QueryConfig = {
+    text: queryStringInfo,
+    values: [getQueryResult.rows[0].developerInfoId],
+  };
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [requestId],
+  };
+
+  await client.query(queryConfig);
+  await client.query(queryConfigInfo);
+
+  return response.status(204).json();
 };

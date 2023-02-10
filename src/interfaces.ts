@@ -10,3 +10,12 @@ export interface IDeveloperDataResult extends IDeveloperData {
 export type RequiredDeveloperKeys = "name" | "email";
 
 export type IDeveloperDataQuery = QueryResult<IDeveloperDataResult>;
+
+// --------------------------------------
+
+export interface IDeveloperInfo {
+  developerSince: string;
+  preferredOS: string;
+}
+
+export type RequiredInfoKeys = "developerSince" | "preferredOS";

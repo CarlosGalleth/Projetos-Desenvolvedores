@@ -1,23 +1,40 @@
 import express, { Application, Request, Response } from "express";
 import { startDatabase } from "./database";
-import { getAllDevelopers, postNewDeveloper } from "./functions";
-import { ensureDataIsValid } from "./middlewares";
+import {
+  deleteDeveloper,
+  getAllDevelopers,
+  getASingleDeveloper,
+  patchDeveloper,
+  patchDeveloperInfo,
+  postNewDeveloper,
+  postNewDeveloperInfo,
+} from "./functions";
+import {
+  ensureDataIsValid,
+  ensureDeveloperExists,
+  ensureInfoDataIsValid,
+} from "./middlewares";
 const app: Application = express();
 app.use(express.json());
 
 // Developers -----------------------------------------------
 
-app.post("/developers", ensureDataIsValid, postNewDeveloper);
-app.post("/developers/:id/infos");
+app.post("/developers", ensureDataIsValid, postNewDeveloper); //
+app.post("/developers/:id/infos", ensureInfoDataIsValid, postNewDeveloperInfo); //
 
-app.get("/developers", getAllDevelopers);
-app.get("/developers/:id");
+app.get("/developers", getAllDevelopers); //
+app.get("/developers/:id", ensureDeveloperExists, getASingleDeveloper); //
 app.get("/developers/:id/projects");
 
-app.patch("/developers/:id");
-app.patch("/developers/:id/infos");
+app.patch(
+  "/developers/:id",
+  ensureDeveloperExists,
+  ensureDataIsValid,
+  patchDeveloper
+); //
+app.patch("/developers/:id/infos", ensureInfoDataIsValid, patchDeveloperInfo); //
 
-app.delete("/developers/:id");
+app.delete("/developers/:id", ensureDeveloperExists, deleteDeveloper); //
 
 // Projects -------------------------------------------------
 
