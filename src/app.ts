@@ -7,6 +7,7 @@ import {
   getAllProjects,
   getASingleDeveloper,
   getASingleProject,
+  getDeveloperProjects,
   patchDeveloper,
   patchDeveloperInfo,
   patchProject,
@@ -32,7 +33,7 @@ app.post("/developers/:id/infos", ensureInfoDataIsValid, postNewDeveloperInfo); 
 
 app.get("/developers", getAllDevelopers); //
 app.get("/developers/:id", ensureDeveloperExists, getASingleDeveloper); //
-app.get("/developers/:id/projects");
+app.get("/developers/:id/projects", getDeveloperProjects);
 
 app.patch("/developers/:id", ensureDeveloperExists, patchDeveloper); //
 app.patch("/developers/:id/infos", ensureInfoDataIsValid, patchDeveloperInfo); //

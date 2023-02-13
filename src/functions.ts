@@ -132,6 +132,31 @@ export const getASingleDeveloper = async (
   return response.status(200).json(queryResult.rows[0]);
 };
 
+export const getDeveloperProjects = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const developerId: number = Number(request.params.id);
+
+  const queryString: string = `
+    SELECT
+      *
+    FROM
+      projects
+    WHERE 
+      "developerId" = $1;
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [developerId],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  return response.status(200).json(queryResult.rows);
+};
+
 // PATCH -----------------------------------------------------------------
 
 export const patchDeveloper = async (
