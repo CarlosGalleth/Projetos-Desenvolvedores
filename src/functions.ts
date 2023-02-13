@@ -5,9 +5,11 @@ import { client } from "./database";
 import {
   IDeveloperData,
   IDeveloperDataQuery,
+  IProjectData,
   RequiredDeveloperKeys,
 } from "./interfaces";
 
+// DEVELOPERS ------------------------------------------------------------
 // POST ------------------------------------------------------------------
 export const postNewDeveloper = async (
   request: Request,
@@ -92,7 +94,7 @@ export const getAllDevelopers = async (
       dinf."preferredOS"
     FROM 
       developers
-    FULL JOIN
+    LEFT JOIN
       developer_infos dinf ON developers."developerInfoId" = dinf.id
   `;
 
@@ -237,7 +239,10 @@ export const patchDeveloperInfo = async (
 };
 // DELETE ----------------------------------------------------------------
 
-export const deleteDeveloper = async (request: Request, response: Response) => {
+export const deleteDeveloper = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
   const requestId: number = Number(request.params.id);
 
   const queryString: string = `
@@ -281,6 +286,129 @@ export const deleteDeveloper = async (request: Request, response: Response) => {
 
   await client.query(queryConfig);
   await client.query(queryConfigInfo);
+
+  return response.status(204).json();
+};
+// PROJECTS --------------------------------------------------------------
+// POST ------------------------------------------------------------------
+
+export const postNewProject = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const projectData: IProjectData = request.projectData;
+
+  const queryString: string = format(
+    `
+    INSERT INTO
+      projects(%I) 
+    VALUES 
+      (%L)
+    RETURNING *;
+  `,
+    Object.keys(projectData),
+    Object.values(projectData)
+  );
+
+  const queryResult = await client.query(queryString);
+
+  return response.status(201).json(queryResult.rows[0]);
+};
+
+// GET -------------------------------------------------------------------
+
+export const getAllProjects = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const queryString: string = `
+    SELECT
+      *
+    FROM
+      projects
+  `;
+
+  const queryResult = await client.query(queryString);
+
+  return response.status(200).json(queryResult.rows);
+};
+
+export const getASingleProject = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const projectId: number = Number(request.params.id);
+
+  const queryString: string = `
+    SELECT
+      *
+    FROM
+      projects
+    WHERE
+      id = $1
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [projectId],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  return response.status(200).json(queryResult.rows[0]);
+};
+// PATCH -----------------------------------------------------------------
+
+export const patchProject = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const projectData = request.projectData;
+  const projectId: number = Number(request.params.id);
+
+  const queryString: string = format(
+    `
+    UPDATE
+      projects
+    SET
+      (%I) = row (%L)
+    WHERE
+      id = $1
+    RETURNING *;
+  `,
+    Object.keys(projectData),
+    Object.values(projectData)
+  );
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [projectId],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  return response.status(200).json(queryResult.rows[0]);
+};
+// DELETE ----------------------------------------------------------------
+
+export const deleteProject = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const projectId: number = Number(request.params.id);
+
+  const queryString: string = `
+    DELETE FROM
+      projects
+    WHERE
+      id = $1
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [projectId],
+  };
+
+  await client.query(queryConfig);
 
   return response.status(204).json();
 };

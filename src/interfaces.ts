@@ -11,11 +11,28 @@ export type RequiredDeveloperKeys = "name" | "email";
 
 export type IDeveloperDataQuery = QueryResult<IDeveloperDataResult>;
 
-// --------------------------------------
-
 export interface IDeveloperInfo {
   developerSince: string;
   preferredOS: string;
 }
 
 export type RequiredInfoKeys = "developerSince" | "preferredOS";
+
+export interface IProjectData {
+  name: string;
+  description: string;
+  estimatedTime: string;
+  repository: string;
+  startDate: Date;
+  endDate?: Date;
+  developerId: number;
+}
+
+export type RequiredProjectKeys =
+  | "name"
+  | "description"
+  | "estimatedTime"
+  | "repository"
+  | "startDate"
+  | "endDate"
+  | "developerId";
