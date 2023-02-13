@@ -110,6 +110,12 @@ export const ensureInfoDataIsValid = async (
 
   const queryResult = await client.query(queryConfig);
 
+  if (!queryResult.rows[0]) {
+    return response.status(404).json({
+      message: "Developer not found",
+    });
+  }
+
   if (queryResult.rows[0].developerInfoId) {
     return response.status(400).json({
       message: "Developer Information already declared",
