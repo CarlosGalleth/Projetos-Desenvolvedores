@@ -236,7 +236,6 @@ export const ensureProjectDataIsValid = async (
     "estimatedTime",
     "repository",
     "startDate",
-    "endDate",
     "developerId",
   ];
 

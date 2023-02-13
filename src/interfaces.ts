@@ -34,5 +34,4 @@ export type RequiredProjectKeys =
   | "estimatedTime"
   | "repository"
   | "startDate"
-  | "endDate"
   | "developerId";
