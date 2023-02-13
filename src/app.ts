@@ -46,7 +46,7 @@ app.patch(
   ensureDataIsValid,
   patchDeveloper
 ); //
-app.patch("/developers/:id/infos", ensureInfoDataIsValid, patchDeveloperInfo); //
+app.patch("/developers/:id/infos", patchDeveloperInfo); //
 
 app.delete("/developers/:id", ensureDeveloperExists, deleteDeveloper); //
 

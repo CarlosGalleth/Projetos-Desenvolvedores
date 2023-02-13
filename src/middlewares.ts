@@ -94,6 +94,28 @@ export const ensureInfoDataIsValid = async (
     "preferredOS",
   ];
 
+  const queryString: string = `
+    SELECT 
+      *
+    FROM
+      developers
+    WHERE
+      id = $1
+  `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [request.params.id],
+  };
+
+  const queryResult = await client.query(queryConfig);
+
+  if (queryResult.rows[0].developerInfoId) {
+    return response.status(400).json({
+      message: "Developer Information already declared",
+    });
+  }
+
   const infoDataIsValid: boolean = requiredInfoKeys.every((elem) => {
     return infoDataKeys.includes(elem);
   });
