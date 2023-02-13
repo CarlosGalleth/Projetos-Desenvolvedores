@@ -55,6 +55,9 @@ VALUES ('JavaScript'), ('Python'), ('React'),
 ('Express.js'), ('HTML'), ('CSS'), ('Django'),
 ('PostgreSQL'), ('MongoDB');
 
+ALTER TABLE technologies
+	RENAME COLUMN name TO "technologyName";
+
 
 
 

@@ -12,6 +12,9 @@ declare global {
         endDate: Date;
         developerId: number;
       };
+      technologyData: {
+        technologyName: string;
+      };
     }
   }
 }

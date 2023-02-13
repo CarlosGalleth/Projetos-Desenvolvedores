@@ -1,4 +1,4 @@
-import { request, Request, Response } from "express";
+import { Request, Response } from "express";
 import { QueryConfig } from "pg";
 import format from "pg-format";
 import { client } from "./database";
@@ -170,7 +170,7 @@ export const patchDeveloper = async (
 
   if (developerKeys.length > requiredKeys.length) {
     return response
-      .status(409)
+      .status(400)
       .json({ message: `Required keys are: ${requiredKeys}` });
   }
 
@@ -219,7 +219,7 @@ export const patchDeveloperInfo = async (
 
   if (developerKeys.length > requiredKeys.length) {
     return response
-      .status(409)
+      .status(400)
       .json({ message: `Required keys are: ${requiredKeys}` });
   }
 
@@ -314,6 +314,7 @@ export const deleteDeveloper = async (
 
   return response.status(204).json();
 };
+
 // PROJECTS --------------------------------------------------------------
 // POST ------------------------------------------------------------------
 
@@ -336,6 +337,81 @@ export const postNewProject = async (
   );
 
   const queryResult = await client.query(queryString);
+
+  return response.status(201).json(queryResult.rows[0]);
+};
+
+export const postNewTechnology = async (
+  request: Request,
+  response: Response
+): Promise<Response> => {
+  const projectId: number = Number(request.params.id);
+  const technologyData = request.body;
+
+  const { technologyName } = technologyData;
+
+  request.technologyData = {
+    technologyName,
+  };
+
+  const getProjectQueryString: string = `
+    SELECT
+      *
+    FROM
+      projects
+    WHERE
+      id = $1
+  `;
+
+  const getProjectQueryConfig: QueryConfig = {
+    text: getProjectQueryString,
+    values: [projectId],
+  };
+
+  const getProjectQueryResult = await client.query(getProjectQueryConfig);
+
+  const getTechQueryString: string = `
+    SELECT
+      *
+    FROM
+      technologies
+    WHERE
+      "technologyName" = $1
+  `;
+
+  const getTechQueryConfig: QueryConfig = {
+    text: getTechQueryString,
+    values: [technologyName],
+  };
+
+  const getTechQueryResult = await client.query(getTechQueryConfig);
+
+  if (!getTechQueryResult.rowCount) {
+    return response.status(400).json({
+      message: "Wrong technology",
+    });
+  }
+
+  const queryString: string = `
+    INSERT INTO
+      projects_technologies ("addedIn","projectId","technologyId")
+    VALUES
+      ($1, $2, $3)
+    RETURNING *;
+  `;
+
+  const date: Date = new Date(Date.now() + 86400 * 1000);
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [
+      date,
+      getProjectQueryResult.rows[0].id,
+      getTechQueryResult.rows[0].id,
+    ],
+  };
+
+  const queryResult = await client.query(queryConfig);
 
   return response.status(201).json(queryResult.rows[0]);
 };

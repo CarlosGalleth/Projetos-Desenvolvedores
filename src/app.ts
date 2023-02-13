@@ -14,6 +14,7 @@ import {
   postNewDeveloper,
   postNewDeveloperInfo,
   postNewProject,
+  postNewTechnology,
 } from "./functions";
 import {
   ensureDataIsValid,
@@ -52,12 +53,12 @@ app.post(
   ensureProjectDataIsValid,
   postNewProject
 ); //
-app.post("/projects/:id/technologies");
+app.post("/projects/:id/technologies", ensureProjectExists, postNewTechnology); //
 
 app.get("/projects", getAllProjects); //
 app.get("/projects/:id", ensureProjectExists, getASingleProject); //
 
-app.patch("/projects/:id", ensureProjectDataIsValid, patchProject);
+app.patch("/projects/:id", ensureProjectDataIsValid, patchProject); //
 
 app.delete("/projects/:id", ensureProjectExists, deleteProject); //
 app.delete("/projects/:id/technologies/:name");
