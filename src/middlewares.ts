@@ -16,6 +16,12 @@ export const ensureDataIsValid = async (
   const developerDataKeys: Array<string> = Object.keys(request.body);
   const requiredDataKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
 
+  const { name, email } = request.body;
+  request.developerData = {
+    name,
+    email,
+  };
+
   const developerDataIsValid: boolean = requiredDataKeys.every((elem) => {
     return developerDataKeys.includes(elem);
   });

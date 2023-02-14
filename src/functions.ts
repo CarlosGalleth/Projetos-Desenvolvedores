@@ -15,32 +15,23 @@ export const postNewDeveloper = async (
   request: Request,
   response: Response
 ): Promise<Response> => {
-  const requiredKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
-  try {
-    const developerData: IDeveloperData = request.body;
-    const queryString: string = format(
-      `
+  const developerData: IDeveloperData = request.developerData;
+
+  const queryString: string = format(
+    `
     INSERT INTO
         developers(%I) 
     VALUES 
         (%L)
     RETURNING *;
   `,
-      Object.keys(developerData),
-      Object.values(developerData)
-    );
+    Object.keys(developerData),
+    Object.values(developerData)
+  );
 
-    const queryResult: IDeveloperDataQuery = await client.query(queryString);
+  const queryResult: IDeveloperDataQuery = await client.query(queryString);
 
-    return response.status(201).json(queryResult.rows[0]);
-  } catch (error: any) {
-    if (error.code === "42703") {
-      response
-        .status(409)
-        .json({ message: `Required keys are: ${requiredKeys}` });
-    }
-    return error;
-  }
+  return response.status(201).json(queryResult.rows[0]);
 };
 
 export const postNewDeveloperInfo = async (
@@ -164,16 +155,8 @@ export const patchDeveloper = async (
   response: Response
 ): Promise<Response> => {
   const requestId: number = Number(request.params.id);
-  const developerKeys: Array<string> = Object.keys(request.body);
-  const developerValues: Array<string> = Object.values(request.body);
-  const requiredKeys: Array<RequiredDeveloperKeys> = ["name", "email"];
-
-  if (developerKeys.length > requiredKeys.length) {
-    return response
-      .status(400)
-      .json({ message: `Required keys are: ${requiredKeys}` });
-  }
-
+  const developerKeys: Array<string> = Object.keys(request.developerData);
+  const developerValues: Array<string> = Object.values(request.developerData);
   const queryString: string = format(
     `
     UPDATE
